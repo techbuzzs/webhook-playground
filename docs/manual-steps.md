@@ -35,9 +35,28 @@ In Supabase Authentication → URL Configuration:
 - Add `http://localhost:3000/auth/callback` for local development.
 - Add `https://YOUR-VERCEL-DOMAIN/auth/callback` for production.
 
-## 3. Configure Vercel secrets
+## 3. Connect the existing Vercel project to GitHub
 
-Add these project environment variables before production deployment:
+`https://webhook-playground.vercel.app` currently serves an older application,
+not this repository. In Vercel, open the existing **webhook-playground**
+project, then go to **Settings → Git** and connect:
+
+- Repository: `techbuzzs/webhook-playground`
+- Production Branch: `main`
+- Root Directory: `.`
+- Framework Preset: Next.js
+
+Save the connection, then choose **Deployments → Redeploy** (or push a new
+commit) to replace the old deployment with the `main` branch build. If the
+existing Vercel project is not yours or cannot be reconnected, create a new
+project by importing that same repository; Vercel will assign a different URL
+until the existing `webhook-playground.vercel.app` project is removed or
+renamed.
+
+## 4. Configure Vercel environment variables
+
+In Vercel, open **webhook-playground → Settings → Environment Variables**.
+Add these values for **Production** and **Preview** before deploying:
 
 - `NEXT_PUBLIC_SUPABASE_URL=https://zncesweeniumqzrxngrp.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` using the provided publishable key
@@ -48,7 +67,7 @@ Add these project environment variables before production deployment:
 Apply server secrets to Production and Preview only where needed. Redeploy
 after changing environment variables.
 
-## 4. Create the first Admin
+## 5. Create the first Admin
 
 Sign in once with GitHub, then use the Supabase SQL editor to promote only your
 account:
@@ -61,7 +80,7 @@ where email = 'YOUR_GITHUB_EMAIL';
 
 Confirm that exactly one intended row was changed.
 
-## 5. Enable analytics and verify deployment
+## 6. Enable analytics and verify deployment
 
 Enable Web Analytics in the Vercel project dashboard. Then verify:
 
@@ -73,7 +92,7 @@ Enable Web Analytics in the Vercel project dashboard. Then verify:
 - `/docs/api`
 - The retention cron invocation
 
-## 6. Add uptime monitoring after the Vercel URL exists
+## 7. Add uptime monitoring after the Vercel URL exists
 
 Create the planned UptimeRobot HTTP monitor for the production root URL. Use a
 five-minute interval on the free plan and enable the notification channel you

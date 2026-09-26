@@ -92,8 +92,10 @@ No card-like input is accepted, sent, or stored.
 ## Deploy to Vercel
 
 1. Import `techbuzzs/webhook-playground` into Vercel.
-2. Add every variable from `.env.example` to Production and Preview as
-   appropriate. Use the production URL for `NEXT_PUBLIC_SITE_URL`.
+2. Add every variable from `.env.example` to the Production environment. The
+   Hobby plan includes Production and Preview variables; Custom Environments
+   are not required. Add Preview variables only when branch previews are
+   needed. Use the production URL for `NEXT_PUBLIC_SITE_URL`.
 3. Deploy the `main` branch.
 4. Add the resulting `/auth/callback` URL to Supabase Auth redirect URLs and
    set the Supabase Site URL.

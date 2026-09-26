@@ -56,16 +56,22 @@ renamed.
 ## 4. Configure Vercel environment variables
 
 In Vercel, open **webhook-playground → Settings → Environment Variables**.
-Add these values for **Production** and **Preview** before deploying:
+The Hobby plan includes the standard **Production** and **Preview** scopes;
+**Custom Environments** are a separate paid feature and are not needed here.
+
+For the first deployment, select **Production** only and add:
 
 - `NEXT_PUBLIC_SUPABASE_URL=https://zncesweeniumqzrxngrp.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` using the provided publishable key
 - `SUPABASE_SERVICE_ROLE_KEY` from Supabase project settings
-- `NEXT_PUBLIC_SITE_URL=https://YOUR-VERCEL-DOMAIN`
+- `NEXT_PUBLIC_SITE_URL=https://webhook-playground.vercel.app`
 - `CRON_SECRET` as a newly generated high-entropy random value
 
-Apply server secrets to Production and Preview only where needed. Redeploy
-after changing environment variables.
+Mark `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` as sensitive if Vercel
+offers that control. Never put either value in GitHub or a `NEXT_PUBLIC_`
+variable. Add the same values to **Preview** only when you intentionally start
+using branch preview deployments; each preview URL must also be allowed in
+Supabase Auth if it uses sign-in. Redeploy after changing environment variables.
 
 ## 5. Create the first Admin
 

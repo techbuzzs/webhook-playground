@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { maskHeaders } from "@/lib/headers";
@@ -21,7 +21,6 @@ function formatBytes(value: number) {
 }
 
 export function Dashboard() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -111,6 +110,7 @@ export function Dashboard() {
   }
 
   async function signIn() {
+    const supabase = createSupabaseBrowserClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -120,6 +120,7 @@ export function Dashboard() {
   }
 
   async function signOut() {
+    const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     setNotice("Signed out. Your account endpoints remain saved.");
     await loadEndpoints();
@@ -164,6 +165,7 @@ export function Dashboard() {
   async function deleteAccount() {
     if (!window.confirm("Permanently delete your account and all saved webhook data?")) return;
     await jsonRequest("/api/account", { method: "DELETE" });
+    const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     window.location.reload();
   }

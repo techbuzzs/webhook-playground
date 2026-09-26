@@ -1,0 +1,292 @@
+openapi: 3.1.0
+info:
+  title: Webhook Playground API
+  version: 1.0.0
+  description: Create temporary webhook endpoints and inspect captured deliveries. Browser management routes use the Supabase session cookie or an anonymous browser session.
+servers:
+  - url: /
+tags:
+  - name: Capture
+  - name: Endpoints
+  - name: Account
+  - name: Admin
+paths:
+  /api/hooks/{endpointSecret}:
+    parameters:
+      - $ref: '#/components/parameters/EndpointSecret'
+    get:
+      tags: [Capture]
+      summary: Capture a GET delivery
+      responses:
+        '200': { $ref: '#/components/responses/Captured' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/LimitReached' }
+    post:
+      tags: [Capture]
+      summary: Capture a POST delivery
+      requestBody:
+        required: false
+        content:
+          application/json: { schema: {} }
+          text/plain: { schema: { type: string } }
+          application/x-www-form-urlencoded: { schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/Captured' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '429': { $ref: '#/components/responses/LimitReached' }
+    put:
+      tags: [Capture]
+      summary: Capture a PUT delivery
+      responses:
+        '200': { $ref: '#/components/responses/Captured' }
+    patch:
+      tags: [Capture]
+      summary: Capture a PATCH delivery
+      responses:
+        '200': { $ref: '#/components/responses/Captured' }
+    delete:
+      tags: [Capture]
+      summary: Capture a DELETE delivery
+      responses:
+        '200': { $ref: '#/components/responses/Captured' }
+  /api/endpoints:
+    get:
+      tags: [Endpoints]
+      summary: List endpoints owned by the account or current anonymous browser
+      responses:
+        '200':
+          description: Endpoint list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [endpoints]
+                properties:
+                  endpoints: { type: array, items: { $ref: '#/components/schemas/Endpoint' } }
+    post:
+      tags: [Endpoints]
+      summary: Create an endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 80 }
+      responses:
+        '201':
+          description: Endpoint created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [endpoint, webhookUrl]
+                properties:
+                  endpoint: { $ref: '#/components/schemas/Endpoint' }
+                  webhookUrl: { type: string, format: uri }
+        '429': { $ref: '#/components/responses/LimitReached' }
+  /api/endpoints/claim:
+    post:
+      tags: [Endpoints]
+      summary: Claim anonymous endpoints from the current browser after sign-in
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          description: Claim result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claimed: { type: integer, minimum: 0 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/endpoints/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [Endpoints]
+      summary: Get an owned endpoint
+      responses:
+        '200': { description: Endpoint details }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Endpoints]
+      summary: Rename an owned endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        '200': { description: Endpoint updated }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Endpoints]
+      summary: Delete an owned endpoint and its deliveries
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/endpoints/{id}/deliveries:
+    get:
+      tags: [Endpoints]
+      summary: List deliveries for an owned endpoint
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Delivery list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveries: { type: array, items: { $ref: '#/components/schemas/Delivery' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/deliveries/{id}:
+    get:
+      tags: [Endpoints]
+      summary: Get an owned delivery
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200': { description: Delivery details }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/account/usage:
+    get:
+      tags: [Account]
+      summary: Get the signed-in account's limits and usage
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: Usage summary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/account:
+    delete:
+      tags: [Account]
+      summary: Delete the signed-in account and its application data
+      security: [{ cookieAuth: [] }]
+      responses:
+        '204': { description: Account deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/mock-checkout:
+    post:
+      tags: [Account]
+      summary: Apply an allowlisted demo entitlement code
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, enum: [demo-basic, demo-plus, demo-pro, demo-decline] }
+      responses:
+        '200': { description: Entitlement updated }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { description: Simulated decline }
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: Search user profiles without captured payload data
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: User profiles }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Admin]
+      summary: Update a user's entitlement, role, or disabled status
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: Updated profile and recorded audit event }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+  parameters:
+    EndpointSecret:
+      name: endpointSecret
+      in: path
+      required: true
+      schema: { type: string, minLength: 32 }
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    Endpoint:
+      type: object
+      required: [id, receiver_token, name, tier, request_limit, body_size_limit, request_count, expires_at, history_expires_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        receiver_token: { type: string }
+        name: { type: string }
+        tier: { type: string, enum: [basic, plus, pro, super_user] }
+        request_limit: { type: integer }
+        body_size_limit: { type: integer }
+        request_count: { type: integer }
+        expires_at: { type: string, format: date-time }
+        history_expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    Delivery:
+      type: object
+      required: [id, endpoint_id, method, path, query, headers, body, body_size, received_at]
+      properties:
+        id: { type: string, format: uuid }
+        endpoint_id: { type: string, format: uuid }
+        method: { type: string }
+        path: { type: string }
+        query: { type: object, additionalProperties: true }
+        headers: { type: object, additionalProperties: { type: string } }
+        body: { type: string }
+        parsed_json: {}
+        content_type: { type: [string, 'null'] }
+        body_size: { type: integer }
+        received_at: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error: { type: string }
+        code: { type: string }
+  responses:
+    Captured:
+      description: Delivery captured
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              received: { type: boolean, const: true }
+    BadRequest:
+      description: Invalid request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: Sign-in required
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Insufficient permission
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Resource not found or expired
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    TooLarge:
+      description: Body exceeds the endpoint's tier limit
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    LimitReached:
+      description: Tier limit reached
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
